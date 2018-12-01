@@ -34,12 +34,15 @@ var __values = (this && this.__values) || function (o) {
     };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var _a;
 var EventParams = /** @class */ (function () {
     function EventParams() {
     }
     return EventParams;
 }());
+/**
+ * The object bearing information about the event that is passed as an argument to the callback.
+ * @template T - name of the event
+ */
 var Event = /** @class */ (function (_super) {
     __extends(Event, _super);
     function Event(name, params) {
@@ -91,10 +94,11 @@ EventTarget.prototype = __assign({}, EventTarget.prototype, {
      */
     dispatchEvent: function (name, event) {
         var e_1, _a;
+        var params = __assign({ target: this, source: this }, event);
         try {
             for (var _b = __values(accessCallbacks(this, name)), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var fn = _c.value;
-                fn(new Event(name, event));
+                fn(new Event(name, params));
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
@@ -119,4 +123,3 @@ function accessCallbacks(obj, name) {
     }
     return callbackSet;
 }
-exports.addEventListener = (_a = EventTarget.prototype, _a.addEventListener), exports.removeEventListener = _a.removeEventListener, exports.dispatchEvent = _a.dispatchEvent;
