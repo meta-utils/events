@@ -3,10 +3,11 @@ import { describe, it } from 'mocha';
 
 import {
     Event,
+    LooseEvent,
     EventTarget,
 } from '../src';
 
-type Equals<T, U> = false extends (T extends U ? U extends T ? true : false : false) ? never : true;
+type Equals<T, U> = false extends (T extends U ? U extends T ? true : false : false) ? false : true;
 
 // tslint:disable:no-unused-expression
 
@@ -154,11 +155,19 @@ describe('Event library', () => {
         const strict = new StrictChecking();
 
 
+        loose.addEventListener('click', (e) => {
+
+            const tt1: Equals<typeof e.something, any> = true;
+            const tt2: Equals<typeof e.something & null, any> = true;
+
+        });
+
+
         const t1: Equals<
             typeof loose.addEventListener,
             {
-                (this: EventTarget<'click'>, name: 'click', fn: (e: Event<'click'>) => void): void;
-                (this: EventTarget<'load'>, name: 'load', fn: (e: Event<'load'>) => void): void;
+                (this: EventTarget<'click'>, name: 'click', fn: (e: LooseEvent<'click'>) => void): void;
+                (this: EventTarget<'load'>, name: 'load', fn: (e: LooseEvent<'load'>) => void): void;
             }
         > = true;
 
@@ -197,6 +206,29 @@ describe('Event library', () => {
                 (this: EventTarget<Dictionary>, name: 'load', data: {src: string} & Partial<Event.Params>): void;
             }
         > = true;
+
+    });
+
+
+    it('should allow for private dispatchEvent', () => {
+
+        class Person extends EventTarget<'died'>
+        {
+            public dispatchEvent = (...args: any[]) => { throw new TypeError('You cannot dispatch events yourself.'); };
+            private internalDispatch = EventTarget.dispatchEvent<'died'>();
+
+            public kill = () => this.internalDispatch('died');
+        }
+
+        let run = false;
+        const person = new Person();
+        person.addEventListener('died', () => run = true);
+
+        expect(() => person.dispatchEvent('died')).to.throw;
+
+        person.kill();
+
+        expect(run).to.be.true;
 
     });
 

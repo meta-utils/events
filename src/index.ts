@@ -3,10 +3,14 @@ import { UnionToIntersection } from '@meta-utils/types';
 
 abstract class EventParams
 {
-    public source?: EventSource;
-    public target?: EventTarget;
+    public source: EventSource;
+    public target: EventTarget;
 }
 
+/**
+ * The object bearing information about the event that is passed as an argument to the callback.
+ * @template T - name of the event
+ */
 export class Event<T extends string = string> extends EventParams
 {
     public name: T;
@@ -20,6 +24,15 @@ export class Event<T extends string = string> extends EventParams
         this.name = name;
         this.timeStamp = Date.now();
     }
+}
+
+/**
+ * Event but all unknown properties are `any`.
+ * @template T - name of the event
+ */
+export interface LooseEvent<T extends string = string> extends Event<T>
+{
+    [key: string]: any;
 }
 
 export namespace Event
@@ -49,7 +62,7 @@ export class EventTarget<T extends string | EventDictionary<T extends string ? s
      */
     public addEventListener: UnionToIntersection<
         T extends string
-        ? (this: EventTarget<T>, name: T, callback: (event: Event<T>) => void) => void
+        ? (this: EventTarget<T>, name: T, callback: (event: LooseEvent<T>) => void) => void
         : (
             {
                 [K in keyof T & string]:
@@ -63,7 +76,7 @@ export class EventTarget<T extends string | EventDictionary<T extends string ? s
      */
     public removeEventListener: UnionToIntersection<
         T extends string
-        ? (this: EventTarget<T>, name: T, callback: (event: Event<T>) => void) => void
+        ? (this: EventTarget<T>, name: T, callback: (event: LooseEvent<T>) => void) => void
         : (
             {
                 [K in keyof T & string]:
@@ -126,7 +139,7 @@ EventTarget.prototype =
      * Appends an event listener for events whose type attribute value is type.
      * The callback argument sets the callback that will be invoked when the event is dispatched.
      */
-    addEventListener(this: EventTarget<any>, name: string, callback: (event: any) => void)
+    addEventListener(this: EventTarget<any>, name: string, callback: (event: Event<string>) => void)
     {
         accessCallbacks(this, name).add(callback);
     },
