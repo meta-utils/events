@@ -9,14 +9,14 @@ abstract class EventParams
 
 /**
  * The object bearing information about the event that is passed as an argument to the callback.
- * @template T - name of the event
+ * @template EventName - name of the event
  */
-export class Event<T extends string = string> extends EventParams
+export class Event<EventName extends string = string> extends EventParams
 {
-    public name: T;
+    public name: EventName;
     public timeStamp: number;
 
-    constructor(name: T, params?: Event.Params)
+    constructor(name: EventName, params?: Event.Params)
     {
         super();
         Object.assign(this, params);
@@ -28,9 +28,9 @@ export class Event<T extends string = string> extends EventParams
 
 /**
  * Event but all unknown properties are `any`.
- * @template T - name of the event
+ * @template EventName - name of the event
  */
-export interface LooseEvent<T extends string = string> extends Event<T>
+export interface LooseEvent<EventName extends string = string> extends Event<EventName>
 {
     [key: string]: any;
 }
@@ -46,13 +46,8 @@ interface EventSource {}
 
 
 
-type EventDictionary<T extends string = string> =
-string extends T ? never :
-{
-    [K in T]: {}
-};
 
-export class EventTarget<T extends string | EventDictionary<T extends string ? string : keyof T> = string>
+export class EventTarget<T extends string | object = string>
 {
     // ! Method types
 
@@ -105,7 +100,7 @@ export class EventTarget<T extends string | EventDictionary<T extends string ? s
 
     /** Factory for addEventListener */
     public static addEventListener<
-        T extends string | EventDictionary<T extends string ? string : keyof T> = string
+        T extends string | object = string
     >(): EventTarget<T>['addEventListener']
     {
         return EventTarget.prototype.addEventListener as any;
@@ -113,7 +108,7 @@ export class EventTarget<T extends string | EventDictionary<T extends string ? s
 
     /** Factory for removeEventListener */
     public static removeEventListener<
-        T extends string | EventDictionary<T extends string ? string : keyof T> = string
+        T extends string | object = string
     >(): EventTarget<T>['removeEventListener']
     {
         return EventTarget.prototype.removeEventListener as any;
@@ -121,7 +116,7 @@ export class EventTarget<T extends string | EventDictionary<T extends string ? s
 
     /** Factory for dispatchEvent */
     public static dispatchEvent<
-        T extends string | EventDictionary<T extends string ? string : keyof T> = string
+        T extends string | object = string
     >(): EventTarget<T>['dispatchEvent']
     {
         return EventTarget.prototype.dispatchEvent as any;
