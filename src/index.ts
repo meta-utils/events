@@ -95,6 +95,22 @@ export class EventTarget<T extends string | object = string>
     >;
 
 
+    /**
+     * Registers a one-time event listener for the specified event and returns a promise
+     * that will be fulfilled once the event fires.
+     */
+    public once: UnionToIntersection<
+        T extends string
+        ? (this: EventTarget<T>, name: T) => Promise<LooseEvent<T>>
+        : (
+            {
+                [K in keyof T & string]:
+                (this: EventTarget<T>, name: K) => Promise<Event<K> & T[K]>
+            }
+        )[keyof T & string]
+    >;
+
+
 
     // ! Method factories
 
@@ -120,6 +136,14 @@ export class EventTarget<T extends string | object = string>
     >(): EventTarget<T>['dispatchEvent']
     {
         return EventTarget.prototype.dispatchEvent as any;
+    }
+
+    /** Factory for once */
+    public static once<
+        T extends string | object = string
+    >(): EventTarget<T>['once']
+    {
+        return EventTarget.prototype.once as any;
     }
 }
 
@@ -158,6 +182,22 @@ EventTarget.prototype =
         {
             fn(new Event(name, params));
         }
+    },
+
+    /**
+     * Registers a one-time event listener for the specified event and returns a promise
+     * that will be fulfilled once the event fires.
+     */
+    once(this: EventTarget<any>, name: string)
+    {
+        return new Promise<any>(res => {
+            const listener = (...props: any[]) => {
+                this.removeEventListener(name, listener);
+                res(...props)
+            }
+
+            this.addEventListener(name, listener)
+        });
     },
 };
 

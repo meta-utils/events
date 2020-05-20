@@ -13,10 +13,26 @@ myInstance.dispatchEvent('load'); // hooray!
 
 # Key features
 * Extensive type checking
-* Standards compilant [[1]](https://github.com/Microsoft/TypeScript/blob/master/src/lib/dom.generated.d.ts#L5038)
-* Can be both `extends`ed and `implements`ed
+* Standards compilant [[1]](https://github.com/Microsoft/TypeScript/blob/master/src/lib/dom.generated.d.ts#L5379)
+* Can be both `extends`'ed and `implements`'ed
 * Can be used in both TypeScript and pure JavaScript
+* Support for one-time events using promises
 
+
+# One-time events
+Sometimes you need to wait until a component is ready before you can continue in your code. Apart from the classic `addEventListener`, you can leverage the promisified method `once` which lets you keep your code clean and flat:
+```javascript
+class Component extends EventTarget {
+    constructor() {
+        doThings();
+        this.dispatchEvent('loaded', { status: 'ready' });
+    }
+}
+
+const comp = new Component();
+const event = await comp.once('loaded');
+event.status === 'ready'
+```
 
 # Implementing
 Sometimes you need your class to inherit from something different than `EventTarget`. Then you can use the static method factories which are shipped with this library. In JavaScript you can do it like this:
@@ -26,6 +42,7 @@ class MyClass extends DifferentClass {}
 MyClass.prototype.addEventListener = EventTarget.addEventListener();
 MyClass.prototype.removeEventListener = EventTarget.removeEventListener();
 MyClass.prototype.dispatchEvent = EventTarget.dispatchEvent();
+MyClass.prototype.once = EventTarget.once();
 ```
 And in TypeScript like this:
 ```typescript
@@ -36,6 +53,7 @@ implements EventTarget<MyEvents>
     public addEventListener = EventTarget.addEventListener<MyEvents>();
     public removeEventListener = EventTarget.removeEventListener<MyEvents>();
     public dispatchEvent = EventTarget.dispatchEvent<MyEvent>();
+    public once = EventTarget.once<MyEvent>();
 }
 ```
 
@@ -72,7 +90,7 @@ class Person extends EventTarget<'died'>
     kill()
     {
         let options = { somethingOther: 42 };
-        
+
         this.dispatchEvent('died', options);
         this.dispatchEvent('was born', options); // Error
     }
@@ -102,7 +120,7 @@ class Person extends EventTarget<PersonEvents>
         this.dispatchEvent('died');
         this.dispatchEvent('killed', { byWhom: murderer });
     }
-    
+
     letDie()
     {
         this.dispatchEvent('died');

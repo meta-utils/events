@@ -9,6 +9,14 @@ import {
 
 type Equals<T, U> = false extends (T extends U ? U extends T ? true : false : false) ? false : true;
 
+function wait(ms: number): Promise<void>
+{
+    return new Promise(res => {
+        //@ts-ignore
+        setTimeout(res, ms)
+    })
+}
+
 // tslint:disable:no-unused-expression
 
 
@@ -99,6 +107,7 @@ describe('Event library', () => {
             public addEventListener = EventTarget.addEventListener<HouseEvents>();
             public removeEventListener = EventTarget.removeEventListener<HouseEvents>();
             public dispatchEvent = EventTarget.dispatchEvent<HouseEvents>();
+            public once = EventTarget.once<HouseEvents>();
 
             public visit(who: string): void
             {
@@ -207,6 +216,22 @@ describe('Event library', () => {
             }
         > = true;
 
+        const t7: Equals<
+            typeof loose.once,
+            {
+                (this: EventTarget<'click'>, name: 'click'): Promise<LooseEvent<'click'>>;
+                (this: EventTarget<'load'>, name: 'load'): Promise<LooseEvent<'load'>>;
+            }
+        > = true;
+
+        const t8: Equals<
+            typeof strict.once,
+            {
+                (this: EventTarget<Dictionary>, name: 'click'): Promise<Event<'click'> & {btn: number}>;
+                (this: EventTarget<Dictionary>, name: 'load'): Promise<Event<'load'> & {src: string}>;
+            }
+        > = true;
+
     });
 
 
@@ -230,6 +255,42 @@ describe('Event library', () => {
 
         expect(run).to.be.true;
 
+    });
+
+
+    it('should support one-time event awaits', async () => {
+
+        interface Dictionary
+        {
+            click: {btn: number};
+            load: {src: string};
+        }
+
+        class Target
+        extends EventTarget<Dictionary> {}
+
+        const target = new Target();
+
+        const promise = (async () => {
+            const c = await target.once('click')
+            expect(c).to.deep.equal({ target, source: target, name: 'click', btn: 42, timeStamp: c.timeStamp, ...Event.prototype })
+
+            const a = await Promise.all([ target.once('load'), target.once('click') ])
+
+            expect(a).to.deep.equal([
+                { target, source: target, name: 'load', src: 'foo', timeStamp: a[0].timeStamp, ...Event.prototype  },
+                { target, source: target, name: 'click', btn: 69, timeStamp: a[1].timeStamp, ...Event.prototype  }
+            ])
+        })()
+
+        target.dispatchEvent('click', { btn: 42 })
+
+        await wait(0) // let the other once's register
+
+        target.dispatchEvent('click', { btn: 69 })
+        target.dispatchEvent('load', { src: 'foo' })
+
+        await promise
     });
 
 });

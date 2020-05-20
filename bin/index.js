@@ -23,15 +23,36 @@ var __assign = (this && this.__assign) || function () {
     };
     return __assign.apply(this, arguments);
 };
-var __values = (this && this.__values) || function (o) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
     if (m) return m.call(o);
-    return {
+    if (o && typeof o.length === "number") return {
         next: function () {
             if (o && i >= o.length) o = void 0;
             return { value: o && o[i++], done: !o };
         }
     };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+};
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
+var __spread = (this && this.__spread) || function () {
+    for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
+    return ar;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var EventParams = /** @class */ (function () {
@@ -41,7 +62,7 @@ var EventParams = /** @class */ (function () {
 }());
 /**
  * The object bearing information about the event that is passed as an argument to the callback.
- * @template T - name of the event
+ * @template EventName - name of the event
  */
 var Event = /** @class */ (function (_super) {
     __extends(Event, _super);
@@ -71,10 +92,14 @@ var EventTarget = /** @class */ (function () {
     EventTarget.dispatchEvent = function () {
         return EventTarget.prototype.dispatchEvent;
     };
+    /** Factory for once */
+    EventTarget.once = function () {
+        return EventTarget.prototype.once;
+    };
     return EventTarget;
 }());
 exports.EventTarget = EventTarget;
-EventTarget.prototype = __assign({}, EventTarget.prototype, { 
+EventTarget.prototype = __assign(__assign({}, EventTarget.prototype), { 
     // ! Method implementation
     /**
      * Appends an event listener for events whose type attribute value is type.
@@ -108,6 +133,24 @@ EventTarget.prototype = __assign({}, EventTarget.prototype, {
             }
             finally { if (e_1) throw e_1.error; }
         }
+    },
+    /**
+     * Registers a one-time event listener for the specified event and returns a promise
+     * that will be fulfilled once the event fires.
+     */
+    once: function (name) {
+        var _this = this;
+        return new Promise(function (res) {
+            var listener = function () {
+                var props = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    props[_i] = arguments[_i];
+                }
+                _this.removeEventListener(name, listener);
+                res.apply(void 0, __spread(props));
+            };
+            _this.addEventListener(name, listener);
+        });
     } });
 var eventDatabase = new WeakMap();
 function accessCallbacks(obj, name) {
